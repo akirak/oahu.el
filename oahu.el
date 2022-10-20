@@ -26,13 +26,11 @@
                                 (cons function
                                       (repeat :tag "Rest of the arguments"))))))))
 
-(defcustom oahu-view-ring-size 10
-  "Ring to temporarily store the history of views."
-  :type 'number)
-
 ;;;; Variables
 
-(defvar oahu-view-ring (make-ring oahu-view-ring-size))
+(defvar oahu-last-view nil)
+
+(defvar oahu-view-history nil)
 
 ;;;; Commands
 
@@ -40,28 +38,31 @@
 (defun oahu-view (type context view-name)
   "Display a view."
   (interactive (cond
-                ('(16)
-                 (oahu-prompt-view-ring))
+                ((and (equal current-prefix-arg '(16))
+                      oahu-view-history)
+                 (oahu-prompt-view-history))
                 ((or (equal current-prefix-arg '(4))
-                     (ring-empty-p oahu-view-ring))
+                     (not oahu-last-view))
                  (let ((context (oahu-prompt-context "Process: ")))
                    (append context
                            (list (completing-read "View: "
                                                   (oahu--view-alist (car context))
                                                   nil t)))))
-                ((ring-ref oahu-view-ring 0))))
+                (oahu-last-view)))
   (let ((files (oahu-org-files type context))
         (view (oahu--view type view-name)))
     (apply (car view) context files (cdr view))
-    (ring-insert oahu-view-ring (list type context view-name))))
+    (cl-pushnew (setq oahu-last-view (list type context view-name))
+                oahu-view-history
+                :test #'equal)))
 
 ;;;; Functions
 
-(defun oahu-prompt-view-ring ()
+(defun oahu-prompt-view-history ()
   (let* ((alist (mapcar (lambda (list)
                           (cons (format "%s" list)
                                 list))
-                        (ring-elements oahu-view-ring)))
+                        oahu-view-history))
          (string (completing-read "View history: " alist nil t)))
     (cdr (assoc string alist))))
 
