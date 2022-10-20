@@ -9,6 +9,7 @@
 ;;;###autoload
 (defun oahu-memento-save ()
   "Save the last view to the current block entry."
+  (interactive)
   (when oahu-last-view
     (org-memento-with-current-block
       ;; Save to separate properties as the structure of `oahu-last-view' may
@@ -24,6 +25,7 @@
 ;;;###autoload
 (defun oahu-memento-load ()
   "Load a view from the current block entry."
+  (interactive)
   (setq oahu-last-view (oahu-memento--view-from-entry)))
 
 (defun oahu-memento--view-from-entry ()
