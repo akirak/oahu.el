@@ -36,5 +36,12 @@
               (view (cdr (assoc "OAHU_VIEW_NAME" alist))))
     (list process argument view)))
 
+(defun oahu-memento-context ()
+  "Return (PROCESS ARGUMENT) of the current entry, if any."
+  (when-let* ((alist (org-entry-properties nil 'standard))
+              (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
+              (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist)))))
+    (list process argument)))
+
 (provide 'oahu-memento)
 ;;; oahu-memento.el ends here
