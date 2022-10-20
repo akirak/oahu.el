@@ -26,11 +26,11 @@
 (defun oahu-memento-load ()
   "Load a view from the current block entry."
   (interactive)
-  (setq oahu-last-view (oahu-memento--view-from-entry)))
+  (setq oahu-last-view (org-memento-with-current-block
+                         (oahu-memento--view-from-entry))))
 
 (defun oahu-memento--view-from-entry ()
-  (when-let* ((alist (org-memento-with-current-block
-                       (org-entry-properties nil 'standard)))
+  (when-let* ((alist (org-entry-properties nil 'standard))
               (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist))))
               (view (cdr (assoc "OAHU_VIEW_NAME" alist))))
@@ -42,6 +42,31 @@
               (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist)))))
     (list process argument)))
+
+;;;###autoload
+(defun oahu-memento-rerun-view (marker)
+  "Dispatch the view for the journal entry."
+  (interactive (list (cl-case (derived-mode-p 'org-mode
+                                              'org-agenda-mode
+                                              'org-memento-timeline-mode)
+                       (org-mode
+                        (point-marker))
+                       (org-agenda-mode
+                        (or (get-char-property (point) 'org-marker)
+                            (get-char-property (point) 'org-hd-marker)
+                            (user-error "No marker at point")))
+                       (org-memento-timeline-mode
+                        (if-let* ((section (magit-current-section))
+                                  (value (oref section value))
+                                  (marker (nth 4 value)))
+                            marker
+                          (user-error "No Org entry at point"))))))
+  (unless (markerp marker)
+    (user-error "Not a marker"))
+  (when-let (view (save-current-buffer
+                    (org-with-point-at marker
+                      (oahu-memento--view-from-entry))))
+    (apply #'oahu-view view)))
 
 (provide 'oahu-memento)
 ;;; oahu-memento.el ends here
