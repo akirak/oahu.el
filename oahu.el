@@ -87,6 +87,16 @@
                 oahu-view-history
                 :test #'equal)))
 
+(defun oahu-another-view (type context)
+  "Display another view in the same context without saving it."
+  (interactive (or (seq-take oahu-last-view 2)
+                   (oahu-prompt-context "Process: ")))
+  (let ((files (oahu-org-files type context))
+        (view (completing-read "View: "
+                               (oahu--view-alist type)
+                               nil t)))
+    (apply (car view) context files (cdr view))))
+
 ;;;; Functions
 
 (defun oahu-prompt-view-history ()
