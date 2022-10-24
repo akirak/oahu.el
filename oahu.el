@@ -42,6 +42,37 @@
 
 ;;;; Custom variables
 
+(define-widget 'oahu-view-name-type 'lazy
+  "Name of a view.
+
+A view name can be either a string, which is the literal view
+name, or a function that takes the context argument and returns a
+string or nil. The returned string is a view name. If the
+function returns nil, the view is temporarily unavailable, and it
+will be omitted in completion."
+  :tag "View name"
+  :type '(choice string
+                 (function :tag "Function that takes a context\
+ and returns a name or nil")))
+
+(define-widget 'oahu-view-body-type 'lazy
+  "Implementation of a view.
+
+This is a cons cell of a function and a list of arguments. The
+function takes two or more arguments, and the first two arguments
+are passed from the process:
+
+ * The context argument returned by the context function, which
+   is defined as :context in `oahu-process-alist'.
+
+ * The Org files returned by :files function in `oahu-process-alist'.
+
+The cdr is appended to these arguments, so if the arguments is a
+N-ary list, the function must accept N+2 arguments."
+  :tag "View"
+  :type '(cons function
+               (repeat :tag "Rest of the arguments" sexp)))
+
 (defcustom oahu-process-alist nil
   "Alist of process definitions.
 
@@ -54,16 +85,9 @@ each entry must have the following properties:
  * :files, a function that takes the context argument and returns
    a list of Org files.
 
- * :views, an alist defining views in the context.
-
-Each view entry in the :views property is a cons cell that
-consists of a view name and a plist.
-
-A view name can be either a string, which is the literal view
-name, or a function that takes the context argument and returns a
-string or nil. The returned string is a view name. If the
-function returns nil, the view is temporarily unavailable, so it
-will be omitted in completion."
+ * :views, an alist defining views in the context. Each entry
+   consists of a name, which is of `oahu-view-name-type', and a
+   view body, which is of `oahu-view-body-type'."
   :type '(alist :key-type (string :tag "Name of the process")
                 :value-type
                 (plist :options
@@ -72,13 +96,9 @@ will be omitted in completion."
                         ((const :files)
                          (function :tag "Function that takes a context and returns Org files"))
                         ((const :views)
-                         (alist :key-type
-                                (choice (string :tag "Name of the view")
-                                        (function :tag "Function that takes a context\
- and returns a name or nil"))
-                                :value-type
-                                (cons function
-                                      (repeat :tag "Rest of the arguments" sexp))))))))
+                         (alist :tag "List of view definitions"
+                                :key-type oahu-view-name-type
+                                :value-type oahu-view-body-type))))))
 
 ;;;; Variables
 
