@@ -43,7 +43,27 @@
 ;;;; Custom variables
 
 (defcustom oahu-process-alist nil
-  "Alist of process definitions."
+  "Alist of process definitions.
+
+Each entry in the alist consists of a process name, which is a
+string, and a process properties, which is a plist. The plist in
+each entry must have the following properties:
+
+ * :context, a function that takes no argument and returns a context argument.
+
+ * :files, a function that takes the context argument and returns
+   a list of Org files.
+
+ * :views, an alist defining views in the context.
+
+Each view entry in the :views property is a cons cell that
+consists of a view name and a plist.
+
+A view name can be either a string, which is the literal view
+name, or a function that takes the context argument and returns a
+string or nil. The returned string is a view name. If the
+function returns nil, the view is temporarily unavailable, so it
+will be omitted in completion."
   :type '(alist :key-type (string :tag "Name of the process")
                 :value-type
                 (plist :options
@@ -52,7 +72,10 @@
                         ((const :files)
                          (function :tag "Function that takes a context and returns Org files"))
                         ((const :views)
-                         (alist :key-type (string :tag "Name of the view")
+                         (alist :key-type
+                                (choice (string :tag "Name of the view")
+                                        (function :tag "Function that takes a context\
+ and returns a name or nil"))
                                 :value-type
                                 (cons function
                                       (repeat :tag "Rest of the arguments" sexp))))))))
@@ -77,11 +100,11 @@
                  (let ((context (oahu-prompt-context "Process: ")))
                    (append context
                            (list (completing-read "View: "
-                                                  (oahu--view-alist (car context))
+                                                  (apply #'oahu--view-alist context)
                                                   nil t)))))
                 (oahu-last-view)))
   (let ((files (oahu-org-files type context))
-        (view (oahu--view type view-name)))
+        (view (oahu--view type context view-name)))
     (apply (car view) context files (cdr view))
     (cl-pushnew (setq oahu-last-view (list type context view-name))
                 oahu-view-history
@@ -93,7 +116,7 @@
                    (oahu-prompt-context "Process: ")))
   (let ((files (oahu-org-files type context))
         (view (completing-read "View: "
-                               (oahu--view-alist type)
+                               (oahu--view-alist type context)
                                nil t)))
     (apply (car view) context files (cdr view))))
 
@@ -132,13 +155,22 @@
     (plist-get :files)
     (funcall value)))
 
-(defun oahu--view-alist (type)
-  (thread-first
-    (cdr (assoc type oahu-process-alist))
-    (plist-get :views)))
+(defun oahu--view-alist (type value)
+  (cl-flet
+      ((mapname (cell)
+         (let ((name (car cell)))
+           (cons (if (functionp name)
+                     (funcall name value)
+                   name)
+                 (cdr cell)))))
+    (thread-last
+      (plist-get (cdr (assoc type oahu-process-alist))
+                 :views)
+      (mapcar #'mapname)
+      (seq-filter #'car))))
 
-(defun oahu--view (type view-name)
-  (cdr (assoc view-name (oahu--view-alist type))))
+(defun oahu--view (type value view-name)
+  (cdr (assoc view-name (oahu--view-alist type value))))
 
 (provide 'oahu)
 ;;; oahu.el ends here
