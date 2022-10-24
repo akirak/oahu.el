@@ -45,13 +45,13 @@
     (org-memento-with-current-block
       ;; Save to separate properties as the structure of `oahu-last-view' may
       ;; change in the future.
-      (org-entry-put nil "oahu_process_name" (nth 0 oahu-last-view))
-      (org-entry-put nil "oahu_process_argument"
+      (org-entry-put nil "OAHU_PROCESS_NAME" (nth 0 oahu-last-view))
+      (org-entry-put nil "OAHU_PROCESS_ARGUMENT"
                      (let ((print-level nil)
                            (print-circle nil)
                            (print-length nil))
                        (prin1-to-string (nth 1 oahu-last-view))))
-      (org-entry-put nil "oahu_view_name" (nth 2 oahu-last-view)))))
+      (org-entry-put nil "OAHU_VIEW_NAME" (nth 2 oahu-last-view)))))
 
 ;;;###autoload
 (defun oahu-memento-load ()
