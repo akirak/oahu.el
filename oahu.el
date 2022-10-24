@@ -109,7 +109,7 @@ each entry must have the following properties:
 ;;;; Commands
 
 ;;;###autoload
-(defun oahu-view (type context view-name)
+(defun oahu-view (type argument view-name)
   "Display a view."
   (interactive (cond
                 ((and (equal current-prefix-arg '(16))
@@ -123,22 +123,22 @@ each entry must have the following properties:
                                                   (apply #'oahu--view-alist context)
                                                   nil t)))))
                 (oahu-last-view)))
-  (let ((files (oahu-org-files type context))
-        (view (oahu--view type context view-name)))
-    (apply (car view) context files (cdr view))
-    (cl-pushnew (setq oahu-last-view (list type context view-name))
+  (let ((files (oahu-org-files type argument))
+        (view (oahu--view type argument view-name)))
+    (apply (car view) argument files (cdr view))
+    (cl-pushnew (setq oahu-last-view (list type argument view-name))
                 oahu-view-history
                 :test #'equal)))
 
-(defun oahu-alternative-view (type context)
-  "Display another view in the same context without saving it."
+(defun oahu-alternative-view (type argument)
+  "Display another view in the same argument without saving it."
   (interactive (or (seq-take oahu-last-view 2)
                    (oahu-prompt-context "Process: ")))
-  (let* ((files (oahu-org-files type context))
-         (view-alist (oahu--view-alist type context))
+  (let* ((files (oahu-org-files type argument))
+         (view-alist (oahu--view-alist type argument))
          (view-name (completing-read "View: " view-alist nil t))
          (view (cdr (assoc view-name view-alist))))
-    (apply (car view) context files (cdr view))))
+    (apply (car view) argument files (cdr view))))
 
 ;;;; Functions
 
@@ -169,18 +169,18 @@ each entry must have the following properties:
     ((pred functionp) (funcall context))
     (`nil t)))
 
-(defun oahu-org-files (type value)
+(defun oahu-org-files (type argument)
   (thread-first
     (cdr (assoc type oahu-process-alist))
     (plist-get :files)
-    (funcall value)))
+    (funcall argument)))
 
-(defun oahu--view-alist (type value)
+(defun oahu--view-alist (type argument)
   (cl-flet
       ((mapname (cell)
          (let ((name (car cell)))
            (cons (if (functionp name)
-                     (funcall name value)
+                     (funcall name argument)
                    name)
                  (cdr cell)))))
     (thread-last
@@ -189,8 +189,8 @@ each entry must have the following properties:
       (mapcar #'mapname)
       (seq-filter #'car))))
 
-(defun oahu--view (type value view-name)
-  (cdr (assoc view-name (oahu--view-alist type value))))
+(defun oahu--view (type argument view-name)
+  (cdr (assoc view-name (oahu--view-alist type argument))))
 
 (provide 'oahu)
 ;;; oahu.el ends here
