@@ -134,10 +134,10 @@ each entry must have the following properties:
   "Display another view in the same context without saving it."
   (interactive (or (seq-take oahu-last-view 2)
                    (oahu-prompt-context "Process: ")))
-  (let ((files (oahu-org-files type context))
-        (view (completing-read "View: "
-                               (oahu--view-alist type context)
-                               nil t)))
+  (let* ((files (oahu-org-files type context))
+         (view-alist (oahu--view-alist type context))
+         (view-name (completing-read "View: " view-alist nil t))
+         (view (cdr (assoc view-name view-alist))))
     (apply (car view) context files (cdr view))))
 
 ;;;; Functions
