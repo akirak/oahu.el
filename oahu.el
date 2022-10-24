@@ -130,7 +130,7 @@ each entry must have the following properties:
                 oahu-view-history
                 :test #'equal)))
 
-(defun oahu-another-view (type context)
+(defun oahu-alternative-view (type context)
   "Display another view in the same context without saving it."
   (interactive (or (seq-take oahu-last-view 2)
                    (oahu-prompt-context "Process: ")))
