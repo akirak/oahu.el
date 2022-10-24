@@ -55,7 +55,7 @@
                          (alist :key-type (string :tag "Name of the view")
                                 :value-type
                                 (cons function
-                                      (repeat :tag "Rest of the arguments"))))))))
+                                      (repeat :tag "Rest of the arguments" sexp))))))))
 
 ;;;; Variables
 
