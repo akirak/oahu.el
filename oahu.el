@@ -130,6 +130,7 @@ each entry must have the following properties:
                 oahu-view-history
                 :test #'equal)))
 
+;;;###autoload
 (defun oahu-alternative-view (type argument)
   "Display another view in the same argument without saving it."
   (interactive (or (seq-take oahu-last-view 2)
