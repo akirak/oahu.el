@@ -47,10 +47,7 @@
       ;; change in the future.
       (org-entry-put nil "OAHU_PROCESS_NAME" (nth 0 oahu-last-view))
       (org-entry-put nil "OAHU_PROCESS_ARGUMENT"
-                     (let ((print-level nil)
-                           (print-circle nil)
-                           (print-length nil))
-                       (prin1-to-string (nth 1 oahu-last-view))))
+                     (oahu-memento--prin1-to-string (nth 1 oahu-last-view)))
       (org-entry-put nil "OAHU_VIEW_NAME" (nth 2 oahu-last-view)))))
 
 ;;;###autoload
@@ -67,12 +64,30 @@
               (view (cdr (assoc "OAHU_VIEW_NAME" alist))))
     (list process argument view)))
 
+(defun oahu-memento--prin1-to-string (sexp)
+  (let ((print-level nil)
+        (print-circle nil)
+        (print-length nil))
+    (prin1-to-string sexp)))
+
 (defun oahu-memento-context ()
   "Return (PROCESS ARGUMENT) of the current entry, if any."
   (when-let* ((alist (org-entry-properties nil 'standard))
               (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist)))))
     (list process argument)))
+
+;;;###autoload
+(defun oahu-memento-template-arguments (context)
+  "Return a plist of template arguments denoting CONTEXT.
+
+This function should be used as :template property of a
+corresponding group level in `org-memento-group-taxonomy'."
+  (pcase-exhaustive context
+    (`(,type ,argument)
+     `(:properties
+       (("OAHU_PROCESS_NAME" . ,type)
+        ("OAHU_PROCESS_ARGUMENT" . ,(oahu-memento--prin1-to-string argument)))))))
 
 ;;;###autoload
 (defun oahu-memento-rerun-view (marker)
