@@ -87,7 +87,9 @@ corresponding group level in `org-memento-group-taxonomy'."
     (`(,type ,argument)
      `(:properties
        (("OAHU_PROCESS_NAME" . ,type)
-        ("OAHU_PROCESS_ARGUMENT" . ,(oahu-memento--prin1-to-string argument)))))))
+        ("OAHU_PROCESS_ARGUMENT" . ,(oahu-memento--prin1-to-string argument)))))
+    (`nil
+     nil)))
 
 ;;;###autoload
 (defun oahu-memento-rerun-view (marker)
