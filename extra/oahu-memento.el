@@ -41,14 +41,15 @@
 (defun oahu-memento-save ()
   "Save the last view to the current block entry."
   (interactive)
-  (when oahu-last-view
-    (org-memento-with-current-block
-      ;; Save to separate properties as the structure of `oahu-last-view' may
-      ;; change in the future.
-      (org-entry-put nil "OAHU_PROCESS_NAME" (nth 0 oahu-last-view))
-      (org-entry-put nil "OAHU_PROCESS_ARGUMENT"
-                     (oahu-memento--prin1-to-string (nth 1 oahu-last-view)))
-      (org-entry-put nil "OAHU_VIEW_NAME" (nth 2 oahu-last-view)))))
+  (if oahu-last-view
+      (org-memento-with-current-block
+        ;; Save to separate properties as the structure of `oahu-last-view' may
+        ;; change in the future.
+        (org-entry-put nil "OAHU_PROCESS_NAME" (nth 0 oahu-last-view))
+        (org-entry-put nil "OAHU_PROCESS_ARGUMENT"
+                       (oahu-memento--prin1-to-string (nth 1 oahu-last-view)))
+        (org-entry-put nil "OAHU_VIEW_NAME" (nth 2 oahu-last-view)))
+    (user-error "No last view")))
 
 ;;;###autoload
 (defun oahu-memento-load ()
