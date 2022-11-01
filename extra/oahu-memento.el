@@ -38,11 +38,22 @@
 (defvar oahu-last-view)
 
 ;;;###autoload
-(defun oahu-memento-save ()
-  "Save the last view to the current block entry."
-  (interactive)
+(defun oahu-memento-save (&optional heading)
+  "Save the last view to the current block entry.
+
+If HEADING is specified, the entry with the heading will be the
+target instead of the current block.
+
+With a single universal argument, the user can choose a heading
+interactively."
+  (interactive (list (when (equal current-prefix-arg '(4))
+                       (org-memento-read-title "Select a block: "
+                         :date (format-time-string "%F")
+                         :select-existing-heading t))))
   (if oahu-last-view
-      (org-memento-with-current-block
+      (org-memento-with-block-title (if (stringp heading)
+                                        heading
+                                      org-memento-current-block)
         ;; Save to separate properties as the structure of `oahu-last-view' may
         ;; change in the future.
         (org-entry-put nil "OAHU_PROCESS_NAME" (nth 0 oahu-last-view))
