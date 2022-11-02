@@ -72,10 +72,10 @@ interactively."
 
 (defun oahu-memento--view-from-entry ()
   (when-let* ((alist (org-entry-properties nil 'standard))
-              (process (intern (cdr (assoc "OAHU_PROCESS_NAME" alist))))
+              (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist))))
               (view (cdr (assoc "OAHU_VIEW_NAME" alist))))
-    (list process argument view)))
+    (list (and process (intern process)) argument view)))
 
 (defun oahu-memento--prin1-to-string (sexp)
   (let ((print-level nil)
@@ -86,9 +86,9 @@ interactively."
 (defun oahu-memento-context ()
   "Return (PROCESS ARGUMENT) of the current entry, if any."
   (when-let* ((alist (org-entry-properties nil 'standard))
-              (process (intern (cdr (assoc "OAHU_PROCESS_NAME" alist))))
+              (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist)))))
-    (list process argument)))
+    (list (and process (intern process)) argument)))
 
 ;;;###autoload
 (defun oahu-memento-template-arguments (context)
