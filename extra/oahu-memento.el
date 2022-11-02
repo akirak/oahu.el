@@ -56,7 +56,8 @@ interactively."
                                       org-memento-current-block)
         ;; Save to separate properties as the structure of `oahu-last-view' may
         ;; change in the future.
-        (org-entry-put nil "OAHU_PROCESS_NAME" (nth 0 oahu-last-view))
+        (org-entry-put nil "OAHU_PROCESS_NAME"
+                       (symbol-name (nth 0 oahu-last-view)))
         (org-entry-put nil "OAHU_PROCESS_ARGUMENT"
                        (oahu-memento--prin1-to-string (nth 1 oahu-last-view)))
         (org-entry-put nil "OAHU_VIEW_NAME" (nth 2 oahu-last-view)))
@@ -71,7 +72,7 @@ interactively."
 
 (defun oahu-memento--view-from-entry ()
   (when-let* ((alist (org-entry-properties nil 'standard))
-              (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
+              (process (intern (cdr (assoc "OAHU_PROCESS_NAME" alist))))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist))))
               (view (cdr (assoc "OAHU_VIEW_NAME" alist))))
     (list process argument view)))
@@ -85,7 +86,7 @@ interactively."
 (defun oahu-memento-context ()
   "Return (PROCESS ARGUMENT) of the current entry, if any."
   (when-let* ((alist (org-entry-properties nil 'standard))
-              (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
+              (process (intern (cdr (assoc "OAHU_PROCESS_NAME" alist))))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist)))))
     (list process argument)))
 
@@ -98,7 +99,7 @@ corresponding group level in `org-memento-group-taxonomy'."
   (pcase-exhaustive context
     (`(,type ,argument)
      `(:properties
-       (("OAHU_PROCESS_NAME" . ,type)
+       (("OAHU_PROCESS_NAME" . ,(symbol-name type))
         ("OAHU_PROCESS_ARGUMENT" . ,(oahu-memento--prin1-to-string argument)))))
     (`nil
      nil)))
