@@ -152,8 +152,10 @@ each entry must have the following properties:
   (interactive)
   (let* ((type (intern (completing-read "Process: "
                                         (mapcar #'car oahu-process-alist))))
-         (plist (cdr (assq type oahu-process-alist)))
-         (argument (funcall (plist-get plist :context-selector))))
+         (plist (cdr (or (assq type oahu-process-alist)
+                         (error "No process named %s" type))))
+         (argument (funcall (or (plist-get plist :context-selector)
+                                (error "No :context-selector property")))))
     (oahu-view type
                argument
                (completing-read "View: "
