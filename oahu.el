@@ -76,8 +76,8 @@ N-ary list, the function must accept N+2 arguments."
 (defcustom oahu-process-alist nil
   "Alist of process definitions.
 
-Each entry in the alist consists of a process name, which is a
-string, and a process properties, which is a plist. The plist in
+Each entry in the alist consists of a process type, which is a
+symbol, and a process properties, which is a plist. The plist in
 each entry must have the following properties:
 
  * :context, a function that takes no argument and returns a context argument.
@@ -91,7 +91,7 @@ each entry must have the following properties:
  * :views, an alist defining views in the context. Each entry
    consists of a name, which is of `oahu-view-name-type', and a
    view body, which is of `oahu-view-body-type'."
-  :type '(alist :key-type (string :tag "Name of the process")
+  :type '(alist :key-type (symbol :tag "Type of the process")
                 :value-type
                 (plist :options
                        (((const :context)
@@ -150,9 +150,9 @@ each entry must have the following properties:
 (defun oahu-view-global ()
   "Display a view selected from global contexts."
   (interactive)
-  (let* ((type (completing-read "Process: "
-                                (mapcar #'car oahu-process-alist)))
-         (plist (cdr (assoc type oahu-process-alist)))
+  (let* ((type (intern (completing-read "Process: "
+                                        (mapcar #'car oahu-process-alist))))
+         (plist (cdr (assq type oahu-process-alist)))
          (argument (funcall (plist-get plist :context-selector))))
     (oahu-view type
                argument
@@ -172,16 +172,16 @@ each entry must have the following properties:
 
 (defun oahu-prompt-context (prompt)
   (let* ((alist (oahu--available-contexts))
-         (type (completing-read prompt alist nil t)))
-    (list type (cdr (assoc type alist)))))
+         (type (intern (completing-read prompt alist nil t))))
+    (list type (cdr (assq type alist)))))
 
 (defun oahu--available-contexts ()
   (thread-last
     oahu-process-alist
-    (mapcar (pcase-lambda (`(,name . ,plist))
+    (mapcar (pcase-lambda (`(,type . ,plist))
               (when-let (ctx (oahu--eval-context
                               (plist-get plist :context)))
-                (cons name ctx))))
+                (cons type ctx))))
     (delq nil)))
 
 (defun oahu--eval-context (context)
@@ -191,7 +191,7 @@ each entry must have the following properties:
 
 (defun oahu-org-files (type argument)
   (thread-first
-    (cdr (assoc type oahu-process-alist))
+    (cdr (assq type oahu-process-alist))
     (plist-get :files)
     (funcall argument)))
 
@@ -204,7 +204,7 @@ each entry must have the following properties:
                    name)
                  (cdr cell)))))
     (thread-last
-      (plist-get (cdr (assoc type oahu-process-alist))
+      (plist-get (cdr (assq type oahu-process-alist))
                  :views)
       (mapcar #'mapname)
       (seq-filter #'car))))
