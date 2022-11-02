@@ -82,6 +82,9 @@ each entry must have the following properties:
 
  * :context, a function that takes no argument and returns a context argument.
 
+ * :context-selector, a function that interactively selects and
+   returns a context argument. It is used in `oahu-view-global'.
+
  * :files, a function that takes the context argument and returns
    a list of Org files.
 
@@ -92,6 +95,8 @@ each entry must have the following properties:
                 :value-type
                 (plist :options
                        (((const :context)
+                         (function :tag "Function that takes no argument"))
+                        ((const :context-selector)
                          (function :tag "Function that takes no argument"))
                         ((const :files)
                          (function :tag "Function that takes a context and returns Org files"))
@@ -140,6 +145,20 @@ each entry must have the following properties:
          (view-name (completing-read "View: " view-alist nil t))
          (view (cdr (assoc view-name view-alist))))
     (apply (car view) argument files (cdr view))))
+
+;;;###autoload
+(defun oahu-view-global ()
+  "Display a view selected from global contexts."
+  (interactive)
+  (let* ((type (completing-read "Process: "
+                                (mapcar #'car oahu-process-alist)))
+         (plist (cdr (assoc type oahu-process-alist)))
+         (argument (funcall (plist-get plist :context-selector))))
+    (oahu-view type
+               argument
+               (completing-read "View: "
+                                (oahu--view-alist type argument)
+                                nil t))))
 
 ;;;; Functions
 
