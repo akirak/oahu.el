@@ -82,7 +82,7 @@ interactively."
         (org-entry-put nil "OAHU_PROCESS_ARGUMENT"
                        (oahu-memento--prin1-to-string (nth 1 oahu-last-view)))
         (org-entry-put nil "OAHU_VIEW_NAME" (nth 2 oahu-last-view)))
-    (user-error "No last view")))
+    (message "No last view")))
 
 ;;;###autoload
 (defun oahu-memento-load ()
