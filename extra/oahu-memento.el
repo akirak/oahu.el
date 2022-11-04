@@ -37,6 +37,22 @@
 
 (defvar oahu-last-view)
 
+(defcustom oahu-memento-view-derive-fn #'ignore
+  "Function that derives the view name of an entry.
+
+This function takes one or more arguments. The first argument is
+a list of view names available in the process. The rest is a
+plist as arguments. The argument plist contains the following
+properties:
+
+ * :title, the headline of the entry in string.
+
+ * :tags, a list of tags of the entry.
+
+ * :properties, which is an alist of properties of the entry.
+   Keys are strings."
+  :type 'function)
+
 ;;;###autoload
 (defun oahu-memento-save (&optional heading)
   "Save the last view to the current block entry.
@@ -74,7 +90,14 @@ interactively."
   (when-let* ((alist (org-entry-properties nil 'standard))
               (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist))))
-              (view (cdr (assoc "OAHU_VIEW_NAME" alist))))
+              (view (or (cdr (assoc "OAHU_VIEW_NAME" alist))
+                        (apply oahu-memento-view-derive-fn
+                               (mapcar #'car oahu--view-alist)
+                               :properties alist
+                               (save-excursion
+                                 (org-back-to-heading)
+                                 (list :title (org-get-heading)
+                                       :tags (org-get-tags (point) 'local)))))))
     (list (and process (intern process)) argument view)))
 
 (defun oahu-memento--prin1-to-string (sexp)
