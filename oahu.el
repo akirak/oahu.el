@@ -153,11 +153,7 @@ each entry must have the following properties:
                          (error "No process named %s" type))))
          (argument (funcall (or (plist-get plist :context-selector)
                                 (error "No :context-selector property")))))
-    (oahu-view type
-               argument
-               (completing-read "View: "
-                                (oahu--view-alist type argument)
-                                nil t))))
+    (oahu-view type argument)))
 
 ;;;; Functions
 
