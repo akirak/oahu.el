@@ -155,6 +155,15 @@ each entry must have the following properties:
                                 (error "No :context-selector property")))))
     (oahu-view type argument)))
 
+(defun oahu-bookmark-last-view ()
+  "Bookmark the last view."
+  (interactive)
+  (unless oahu-last-view
+    (user-error "No last view"))
+  (let ((record (oahu--make-bookmark-record oahu-last-view))
+        (name (read-from-minibuffer "Name of the bookmark: ")))
+    (bookmark-store name record nil)))
+
 ;;;; Functions
 
 (defun oahu-prompt-view-history ()
@@ -211,6 +220,16 @@ each entry must have the following properties:
   (let ((view-alist (oahu--view-alist type argument)))
     (cdr (assoc (completing-read "View: " view-alist nil t)
                 view-alist))))
+
+(defun oahu--make-bookmark-record (view-triple)
+  `((handler . oahu-bookmark-handler)
+    (view . ,view-triple)))
+
+;;;###autoload
+(defun oahu-bookmark-handler (bookmark)
+  (cl-assert (eq (alist-get 'handler bookmark)
+                 'oahu-bookmark-handler))
+  (apply #'oahu-view (alist-get 'view bookmark)))
 
 (provide 'oahu)
 ;;; oahu.el ends here
