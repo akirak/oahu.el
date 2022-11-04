@@ -114,7 +114,7 @@ each entry must have the following properties:
 ;;;; Commands
 
 ;;;###autoload
-(defun oahu-view (type argument view-name)
+(defun oahu-view (type argument &optional view-name)
   "Display a view."
   (interactive (cond
                 ((and (equal current-prefix-arg '(16))
@@ -124,12 +124,11 @@ each entry must have the following properties:
                      (not oahu-last-view))
                  (let ((context (oahu-prompt-context "Process: ")))
                    (append context
-                           (list (completing-read "View: "
-                                                  (apply #'oahu--view-alist context)
-                                                  nil t)))))
+                           (list (car (apply #'oahu--select-view context))))))
                 (oahu-last-view)))
   (let ((files (oahu-org-files type argument))
-        (view (oahu--view type argument view-name)))
+        (view (or (oahu--view type argument view-name)
+                  (oahu--select-view type argument))))
     (apply (car view) argument files (cdr view))
     (cl-pushnew (setq oahu-last-view (list type argument view-name))
                 oahu-view-history
@@ -141,9 +140,7 @@ each entry must have the following properties:
   (interactive (or (seq-take oahu-last-view 2)
                    (oahu-prompt-context "Process: ")))
   (let* ((files (oahu-org-files type argument))
-         (view-alist (oahu--view-alist type argument))
-         (view-name (completing-read "View: " view-alist nil t))
-         (view (cdr (assoc view-name view-alist))))
+         (view (oahu--select-view type argument)))
     (apply (car view) argument files (cdr view))))
 
 ;;;###autoload
@@ -213,6 +210,11 @@ each entry must have the following properties:
 
 (defun oahu--view (type argument view-name)
   (cdr (assoc view-name (oahu--view-alist type argument))))
+
+(defun oahu--select-view (type argument)
+  (let ((view-alist (oahu--view-alist type argument)))
+    (cdr (assoc (completing-read "View: " view-alist nil t)
+                view-alist))))
 
 (provide 'oahu)
 ;;; oahu.el ends here
