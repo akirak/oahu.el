@@ -37,6 +37,11 @@
 
 (defvar oahu-last-view)
 
+(defgroup oahu-memento nil
+  "Org-Memento integration for oahu."
+  :group 'oahu
+  :group 'org-memento)
+
 (defcustom oahu-memento-view-derive-fn #'ignore
   "Function that derives the view name of an entry.
 
