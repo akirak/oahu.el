@@ -126,11 +126,11 @@ each entry must have the following properties:
                    (append context
                            (list (car (apply #'oahu--select-view context))))))
                 (oahu-last-view)))
-  (let ((files (oahu-org-files type argument))
-        (view (or (oahu--view type argument view-name)
-                  (oahu--select-view type argument))))
-    (apply (car view) argument files (cdr view))
-    (cl-pushnew (setq oahu-last-view (list type argument view-name))
+  (let* ((files (oahu-org-files type argument))
+         (view (or (oahu--view type argument view-name)
+                   (oahu--select-view type argument))))
+    (apply (cadr view) argument files (cddr view))
+    (cl-pushnew (setq oahu-last-view (list type argument (car view)))
                 oahu-view-history
                 :test #'equal)))
 
@@ -214,12 +214,12 @@ each entry must have the following properties:
       (seq-filter #'car))))
 
 (defun oahu--view (type argument view-name)
-  (cdr (assoc view-name (oahu--view-alist type argument))))
+  (assoc view-name (oahu--view-alist type argument)))
 
 (defun oahu--select-view (type argument)
   (let ((view-alist (oahu--view-alist type argument)))
-    (cdr (assoc (completing-read "View: " view-alist nil t)
-                view-alist))))
+    (assoc (completing-read "View: " view-alist nil t)
+           view-alist)))
 
 (defun oahu--make-bookmark-record (view-triple)
   `((handler . oahu-bookmark-handler)
