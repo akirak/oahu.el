@@ -141,7 +141,7 @@ each entry must have the following properties:
                    (oahu-prompt-context "Process: ")))
   (let* ((files (oahu-org-files type argument))
          (view (oahu--select-view type argument)))
-    (apply (car view) argument files (cdr view))))
+    (apply (cadr view) argument files (cddr view))))
 
 ;;;###autoload
 (defun oahu-view-global ()
