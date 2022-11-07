@@ -96,14 +96,17 @@ interactively."
               (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist))))
               (view-names (mapcar #'car (oahu--view-alist process argument)))
-              (view (or (cdr (assoc "OAHU_VIEW_NAME" alist))
-                        (apply oahu-memento-view-derive-fn
-                               view-names
-                               :properties alist
-                               (save-excursion
-                                 (org-back-to-heading)
-                                 (list :title (org-get-heading)
-                                       :tags (org-get-tags (point) 'local)))))))
+              (saved-view-name (cdr (assoc "OAHU_VIEW_NAME" alist)))
+              (view-name (or saved-view-name
+                             (apply oahu-memento-view-derive-fn
+                                    view-names
+                                    :properties alist
+                                    (save-excursion
+                                      (org-back-to-heading)
+                                      (list :title (org-get-heading)
+                                            :tags (org-get-tags (point) 'local)))))))
+    (unless saved-view-name
+      (message "Picked %s for the process %s %s" view-name process argument))
     (list (and process (intern process)) argument view)))
 
 (defun oahu-memento--prin1-to-string (sexp)
