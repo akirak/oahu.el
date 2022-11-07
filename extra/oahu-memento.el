@@ -95,9 +95,10 @@ interactively."
   (when-let* ((alist (org-entry-properties nil 'standard))
               (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist))))
+              (view-names (mapcar #'car (oahu--view-alist process argument)))
               (view (or (cdr (assoc "OAHU_VIEW_NAME" alist))
                         (apply oahu-memento-view-derive-fn
-                               (mapcar #'car oahu--view-alist)
+                               view-names
                                :properties alist
                                (save-excursion
                                  (org-back-to-heading)
