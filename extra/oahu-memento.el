@@ -93,7 +93,9 @@ interactively."
 
 (defun oahu-memento--view-from-entry ()
   (when-let* ((alist (org-entry-properties nil 'standard))
-              (process (cdr (assoc "OAHU_PROCESS_NAME" alist)))
+              (process-name (cdr (assoc "OAHU_PROCESS_NAME" alist)))
+              (process (when process-name
+                         (intern process-name)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist))))
               (view-names (mapcar #'car (oahu--view-alist process argument)))
               (saved-view-name (cdr (assoc "OAHU_VIEW_NAME" alist)))
@@ -107,7 +109,7 @@ interactively."
                                             :tags (org-get-tags (point) 'local)))))))
     (unless saved-view-name
       (message "Picked %s for the process %s %s" view-name process argument))
-    (list (and process (intern process)) argument view)))
+    (list process argument view)))
 
 (defun oahu-memento--prin1-to-string (sexp)
   (let ((print-level nil)
