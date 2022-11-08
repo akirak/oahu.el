@@ -45,10 +45,17 @@
 (defcustom oahu-memento-view-derive-fn #'ignore
   "Function that derives the view name of an entry.
 
-This function takes one or more arguments. The first argument is
-a list of view names available in the process. The rest is a
-plist as arguments. The argument plist contains the following
-properties:
+This function takes three or more arguments. The following
+arguments are mandatory:
+
+ 1. A process type.
+
+ 2. A process argument.
+
+ 3. A list of view names available in the process.
+
+The rest of the arguments is a plist. The argument plist contains
+the following properties:
 
  * :title, the headline of the entry in string.
 
@@ -100,6 +107,7 @@ interactively."
               (view-names (mapcar #'car (oahu--view-alist process argument)))
               (view-name (or (cdr (assoc "OAHU_VIEW_NAME" alist))
                              (apply oahu-memento-view-derive-fn
+                                    process argument
                                     view-names
                                     :properties alist
                                     (save-excursion
