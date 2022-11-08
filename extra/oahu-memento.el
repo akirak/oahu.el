@@ -114,7 +114,7 @@ interactively."
                                       (org-back-to-heading)
                                       (list :title (org-get-heading)
                                             :tags (org-get-tags (point) 'local)))))))
-    (list process argument view)))
+    (list process argument view-name)))
 
 (defun oahu-memento--prin1-to-string (sexp)
   (let ((print-level nil)
