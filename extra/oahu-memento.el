@@ -168,5 +168,14 @@ corresponding group level in `org-memento-group-taxonomy'."
                       (oahu-memento--view-from-entry))))
     (apply #'oahu-view view)))
 
+;;;###autoload
+(defun oahu-memento-group-view (group)
+  "Dispatch a view for the group at point."
+  (interactive (list (org-memento-read-group nil
+                       :group-path (org-memento-timeline-group-at-point))))
+  (when-let (view (org-memento-with-group-entry group
+                    (oahu-memento--view-from-entry)))
+    (apply #'oahu-view view)))
+
 (provide 'oahu-memento)
 ;;; oahu-memento.el ends here
