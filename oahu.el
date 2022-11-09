@@ -147,13 +147,16 @@ each entry must have the following properties:
 (defun oahu-view-global ()
   "Display a view selected from global contexts."
   (interactive)
+  (apply #'oahu-view (oahu-read-context-globally)))
+
+(defun oahu-read-context-globally ()
   (let* ((type (intern (completing-read "Process: "
                                         (mapcar #'car oahu-process-alist))))
          (plist (cdr (or (assq type oahu-process-alist)
                          (error "No process named %s" type))))
          (argument (funcall (or (plist-get plist :context-selector)
                                 (error "No :context-selector property")))))
-    (oahu-view type argument)))
+    (list type argument)))
 
 (defun oahu-bookmark-last-view ()
   "Bookmark the last view."
