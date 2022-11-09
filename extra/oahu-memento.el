@@ -84,12 +84,26 @@ interactively."
                                       org-memento-current-block)
         ;; Save to separate properties as the structure of `oahu-last-view' may
         ;; change in the future.
-        (org-entry-put nil "OAHU_PROCESS_NAME"
-                       (symbol-name (nth 0 oahu-last-view)))
-        (org-entry-put nil "OAHU_PROCESS_ARGUMENT"
-                       (oahu-memento--prin1-to-string (nth 1 oahu-last-view)))
-        (org-entry-put nil "OAHU_VIEW_NAME" (nth 2 oahu-last-view)))
+        (apply #'oahu-memento--save-to-entry oahu-last-view))
     (message "No last view")))
+
+;;;###autoload
+(defun oahu-memento-set-entry-at-point ()
+  "Set the view of a journal entry at point."
+  (interactive)
+  (unless (and (derived-mode-p 'org-mode)
+               (file-equal-p org-memento-file
+                             (buffer-file-name (org-base-buffer (current-buffer))))
+               (not (org-before-first-heading-p)))
+    (user-error "You must run this command inside the buffer of org-memento-file"))
+  (apply #'oahu-memento--save-to-entry
+         (oahu-read-context-globally)))
+
+(defun oahu-memento--save-to-entry (type argument &optional view-name)
+  (org-entry-put nil "OAHU_PROCESS_NAME" (symbol-name type))
+  (org-entry-put nil "OAHU_PROCESS_ARGUMENT" (oahu-memento--prin1-to-string argument))
+  (when view-name
+    (org-entry-put nil "OAHU_VIEW_NAME" view-name)))
 
 ;;;###autoload
 (defun oahu-memento-load ()
