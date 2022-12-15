@@ -105,6 +105,15 @@ each entry must have the following properties:
                                 :key-type oahu-view-name-type
                                 :value-type oahu-view-body-type))))))
 
+(defcustom oahu-view-export-hook
+  '(oahu-export-org-agenda)
+  "List of functions that exports the current buffer to a directory.
+
+Each function takes two arguments: the output directory and a
+file name suffix. It should return one of the exported files if
+it exporting succeeds and nil if nothing."
+  :type 'hook)
+
 ;;;; Variables
 
 (defvar oahu-last-view nil)
@@ -129,24 +138,28 @@ each entry must have the following properties:
   (let* ((files (oahu-org-files type argument))
          (view (or (oahu--view type argument view-name)
                    (oahu--select-view type argument))))
-    (apply (cadr view) argument files (cddr view))
-    (cl-pushnew (setq oahu-last-view (list type argument (car view)))
-                oahu-view-history
-                :test #'equal)))
+    ;; Returned value matters
+    (prog1 (apply (cadr view) argument files (cddr view))
+      (cl-pushnew (setq oahu-last-view (list type argument (car view)))
+                  oahu-view-history
+                  :test #'equal))))
 
 ;;;###autoload
-(defun oahu-alternative-view (type argument)
+(defun oahu-alternative-view (type argument &optional view-name)
   "Display another view in the same argument without saving it."
   (interactive (or (seq-take oahu-last-view 2)
                    (oahu-prompt-context "Process: ")))
   (let* ((files (oahu-org-files type argument))
-         (view (oahu--select-view type argument)))
+         (view (or (oahu--view type argument view-name)
+                   (oahu--select-view type argument))))
+    ;; Returned value matters
     (apply (cadr view) argument files (cddr view))))
 
 ;;;###autoload
 (defun oahu-view-global ()
   "Display a view selected from global contexts."
   (interactive)
+  ;; Returned value matters
   (apply #'oahu-view (oahu-read-context-globally)))
 
 (defun oahu-read-context-globally ()
@@ -233,6 +246,129 @@ each entry must have the following properties:
   (cl-assert (eq (alist-get 'handler bookmark)
                  'oahu-bookmark-handler))
   (apply #'oahu-view (alist-get 'view bookmark)))
+
+;;;; Exporting
+
+(defun oahu-export-org-agenda (directory suffix)
+  "Export the current `org-agenda' buffer."
+  (when (derived-mode-p 'org-agenda-mode)
+    (goto-char (point-min))
+    (cl-labels
+        ((headerp ()
+           (get-text-property (point) 'org-agenda-structural-header))
+         (entryp ()
+           (get-text-property (point) 'org-agenda-type))
+         (blankp ()
+           (and (eolp) (bolp)))
+         (get-section (&optional bound)
+           (let* ((current-level (when (looking-at (rx (* blank)))
+                                   (- (match-end 0) (match-beginning 0))))
+                  (title (buffer-substring-no-properties (match-end 0) (pos-eol)))
+                  (section-end (save-excursion
+                                 (catch 'section-end
+                                   (while (re-search-forward
+                                           (rx-to-string
+                                            `(and bol (repeat 0 ,current-level blank)))
+                                           bound
+                                           t)
+                                     (when (headerp)
+                                       (throw 'section-end (pos-eol 0))))
+                                   (or bound (point-max)))))
+                  items)
+             (forward-line)
+             (let (items
+                   children)
+               (while (entryp)
+                 (push (oahu--agenda-entry) items))
+               (while (< (point) section-end)
+                 (cond
+                  ((blankp)
+                   (forward-line))
+                  ((headerp)
+                   (push (get-section section-end) children))))
+               `((type . "group")
+                 (title . ,title)
+                 (items . ,(seq-into (nreverse items) 'vector))
+                 ,@(when children
+                     `((children . ,(seq-into (nreverse children) 'vector)))))))))
+      (let (root-items)
+        (while (< (point) (point-max))
+          (cond
+           ((blankp)
+            (forward-line))
+           ((headerp)
+            (push (get-section) root-items))
+           ((entryp)
+            (push (oahu--agenda-entry) root-items))
+           (t
+            (forward-line))))
+        (let* ((name (buffer-name))
+               (outfile (expand-file-name (concat (string-trim (replace-regexp-in-string
+                                                                "\\*" "" name))
+                                                  suffix
+                                                  ".json")
+                                          directory)))
+          (with-temp-buffer
+            (json-insert `((type . "org-agenda")
+                           (title . ,name)
+                           (exported-at . ,(format-time-string "%Y-%m-%dT%H:%M:%S%:z"))
+                           (content . ,(seq-into (nreverse root-items) 'vector))))
+            (write-region (point-min) (point-max) outfile)
+            (message "Exported %s to %s" name outfile))
+          outfile)))))
+
+(defun oahu--agenda-entry ()
+  (cl-labels
+      ((convert-value (value)
+         (pcase value
+           (`t
+            t)
+           (`nil
+            :null)
+           ((pred markerp)
+            nil)
+           ((pred stringp)
+            (org-no-properties value))
+           ((and `(,type . ,_)
+                 (guard (symbolp type)))
+            (if (eq 'link (org-element-type value))
+                (let ((link (org-element-property :raw-link value)))
+                  (if (url-type (url-generic-parse-url link))
+                      `((type . "link")
+                        (link . ,link)
+                        (text . ,(convert-value (car (org-element-contents value)))))
+                    (convert-value (car (org-element-contents value)))))
+              (pcase-exhaustive (org-element-contents value)
+                (`nil
+                 (org-element-property :raw-value value))
+                (`(,x)
+                 (convert-value x))
+                (contents
+                 (when-let (values (delq nil (mapcar #'convert-value contents)))
+                   (seq-into values 'vector))))))
+           ((and (pred sequencep)
+                 (guard (not (cdr (last value)))))
+            (when-let (values (delq nil (mapcar #'convert-value value)))
+              (seq-into values 'vector))))))
+    (let ((marker (org-agenda-get-any-marker))
+          (properties (cl-loop for (key value) on (text-properties-at (point))
+                               by #'cddr
+                               with result = nil
+                               collect (cons key (convert-value value))
+                               into result
+                               finally return (cl-remove-if-not #'cdr result))))
+      (forward-line)
+      `((type . "entry")
+        (filename . ,(thread-first
+                       (marker-buffer marker)
+                       (org-base-buffer)
+                       (buffer-file-name)
+                       (abbreviate-file-name)))
+        ,@properties
+        ,@(unless (assq 'ID properties)
+            (org-with-point-at marker
+              (list (cons 'outline-path
+                          (seq-into (org-get-outline-path) 'vector)))))))))
 
 (provide 'oahu)
 ;;; oahu.el ends here

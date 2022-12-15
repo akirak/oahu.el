@@ -191,5 +191,63 @@ corresponding group level in `org-memento-group-taxonomy'."
                     (oahu-memento--view-from-entry)))
     (apply #'oahu-view view)))
 
+;;;###autoload
+(defun oahu-memento-export (directory)
+  "Export views to a directory."
+  (interactive "DExport to directory: ")
+  (let ((start (float-time))
+        (i 0)
+        logs)
+    (unwind-protect
+        (dolist (view (oahu-memento--exported-views))
+          (let ((buffer (apply #'oahu-alternative-view view)))
+            (if-let (filename (with-current-buffer (cl-etypecase buffer
+                                                     (string (get-buffer buffer))
+                                                     (buffer buffer))
+                                (run-hook-with-args-until-success
+                                 'oahu-view-export-hook
+                                 directory
+                                 (format "_%s_%d"
+                                         (format-time-string "%s" start)
+                                         (cl-incf i)))))
+                (push `((view . ,(apply #'vector (mapcar #'prin1-to-string view)))
+                        (filename . ,(file-relative-name filename directory))
+                        (datetime . ,(format-time-string "%Y-%m-%dT%H:%M:%S%:z")))
+                      logs)
+              (error "None of oahu-view-export-hook return non-nil for %s" view))))
+      (with-temp-buffer
+        (dolist (log (reverse logs))
+          (json-insert log)
+          (unless (bolp)
+            (insert "\n")))
+        (append-to-file (point-min) (point-max)
+                        (expand-file-name "export.ndjson" directory))))
+    (message "Exported %d views in %.1f sec" (length logs) (- (float-time) start))))
+
+(defun oahu-memento--exported-views ()
+  (let (views)
+    (dolist (group (oahu-memento--zone-groups))
+      (when-let (view (org-memento-with-group-entry group
+                        (oahu-memento--view-from-entry)))
+        (cl-pushnew view views)))
+    (dolist (block (org-memento--blocks))
+      (when-let (view (org-with-point-at (org-memento-block-hd-marker block)
+                        (oahu-memento--view-from-entry)))
+        (cl-pushnew view views)))
+    views))
+
+(defun oahu-memento--zone-groups ()
+  (when org-memento-zone-taxy
+    (let (result)
+      (cl-labels
+          ((go (taxy)
+             (dolist (group (plist-get (cdr (taxy-name taxy)) :groups))
+               (cl-pushnew group result))
+             (dolist (subtaxy (taxy-taxys taxy))
+               (go subtaxy))))
+        (dolist (taxy (taxy-taxys org-memento-zone-taxy))
+          (go taxy)))
+      result)))
+
 (provide 'oahu-memento)
 ;;; oahu-memento.el ends here
