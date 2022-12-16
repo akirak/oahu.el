@@ -318,6 +318,7 @@ it exporting succeeds and nil if nothing."
           outfile)))))
 
 (defun oahu--agenda-entry ()
+  (require 'org)
   (cl-labels
       ((convert-value (value)
          (pcase value
