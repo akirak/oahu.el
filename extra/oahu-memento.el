@@ -118,17 +118,16 @@ interactively."
               (process (when process-name
                          (intern process-name)))
               (argument (read (cdr (assoc "OAHU_PROCESS_ARGUMENT" alist))))
-              (view-names (mapcar #'car (oahu--view-alist process argument)))
-              (view-name (or (cdr (assoc "OAHU_VIEW_NAME" alist))
-                             (apply oahu-memento-view-derive-fn
-                                    process argument
-                                    view-names
-                                    :properties alist
-                                    (save-excursion
-                                      (org-back-to-heading)
-                                      (list :title (org-get-heading)
-                                            :tags (org-get-tags (point) 'local)))))))
-    (list process argument view-name)))
+              (view-names (mapcar #'car (oahu--view-alist process argument))))
+    (list process argument (or (cdr (assoc "OAHU_VIEW_NAME" alist))
+                               (apply oahu-memento-view-derive-fn
+                                      process argument
+                                      view-names
+                                      :properties alist
+                                      (save-excursion
+                                        (org-back-to-heading)
+                                        (list :title (org-get-heading)
+                                              :tags (org-get-tags (point) 'local))))))))
 
 (defun oahu-memento--prin1-to-string (sexp)
   (let ((print-level nil)
