@@ -200,6 +200,12 @@ corresponding group level in `org-memento-group-taxonomy'."
                         (oahu-memento--view-from-entry))))
     (apply #'oahu-view view)))
 
+(defun oahu-memento-group-view-at-point ()
+  "Return the view at point in the timeline."
+  (when-let (marker (oahu-memento--block-marker-at-point))
+    (org-with-point-at marker
+      (oahu-memento--view-from-entry))))
+
 (defun oahu-memento--block-marker-at-point ()
   (when-let (section (magit-current-section))
     (when (eq (oref section type) 'block)
