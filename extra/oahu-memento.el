@@ -190,18 +190,20 @@ corresponding group level in `org-memento-group-taxonomy'."
 ;;;###autoload
 (defun oahu-memento-group-view (block-marker-or-group)
   "Dispatch a view for the group at point."
-  (interactive (if-let* ((section (magit-current-section))
-                         (marker (when (eq (oref section type) 'block)
-                                   (nth 3 (oref section value)))))
-                   (list marker)
-                 (list (org-memento-read-group "Dispatch a view for a group: "
-                         :group-path (org-memento-timeline-group-at-point)))))
+  (interactive (list (or (oahu-memento--block-marker-at-point)
+                         (org-memento-read-group "Dispatch a view for a group: "
+                           :group-path (org-memento-timeline-group-at-point)))))
   (when-let (view (or (and (markerp block-marker-or-group)
                            (org-with-point-at block-marker-or-group
                              (oahu-memento--view-from-entry)))
                       (org-memento-with-group-entry block-marker-or-group
                         (oahu-memento--view-from-entry))))
     (apply #'oahu-view view)))
+
+(defun oahu-memento--block-marker-at-point ()
+  (when-let (section (magit-current-section))
+    (when (eq (oref section type) 'block)
+      (nth 3 (oref section value)))))
 
 ;;;###autoload
 (defun oahu-memento-export (directory)
