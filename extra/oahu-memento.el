@@ -98,11 +98,7 @@ interactively."
     (user-error "You must run this command inside the buffer of org-memento-file"))
   (apply #'oahu-memento--save-to-entry
          (oahu-read-context-globally))
-  (when (and (equal org-memento-current-block (org-get-heading t t t t))
-             (org-with-wide-buffer
-              (and (re-search-backward (rx bol "*" blank) nil t)
-                   (equal (match-string 4)
-                          (org-memento--today-string)))))
+  (when (org-memento-current-block-p)
     (org-memento-rerun-block-hook)))
 
 (defun oahu-memento--save-to-entry (type argument &optional view-name)
