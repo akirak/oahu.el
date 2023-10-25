@@ -233,9 +233,22 @@ it exporting succeeds and nil if nothing."
   (assoc view-name (oahu--view-alist type argument)))
 
 (defun oahu--select-view (type argument)
-  (let ((view-alist (oahu--view-alist type argument)))
-    (assoc (completing-read "View: " view-alist nil t)
-           view-alist)))
+  (let ((view-alist (oahu--view-alist type argument))
+        ;; TODO: Maybe more print options are needed
+        (print-level nil)
+        (print-length nil))
+    (cl-labels
+        ((annotator (candidate)
+           (when-let (cell (assoc candidate view-alist))
+             (concat " " (prin1-to-string (cdr cell)))))
+         (completions (string pred action)
+           (if (eq action 'metadata)
+               (cons 'metadata
+                     (list (cons 'category 'oahu-view-name)
+                           (cons 'annotation-function #'annotator)))
+             (complete-with-action action view-alist string pred))))
+      (assoc (completing-read "View: " #'completions nil t)
+             view-alist))))
 
 (defun oahu--make-bookmark-record (view-triple)
   `((handler . oahu-bookmark-handler)
