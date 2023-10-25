@@ -114,6 +114,15 @@ file name suffix. It should return one of the exported files if
 it exporting succeeds and nil if nothing."
   :type 'hook)
 
+(defcustom oahu-fallback-view-function #'ignore
+  "Function that returns a view from a string.
+
+In completion of a view name, this function will be used for
+building a view from a user input that doesn't match a candidate.
+For example, one could use `org-ql--query-string-to-sexp' to
+build an ql view from a minibuffer."
+  :type 'function)
+
 ;;;; Variables
 
 (defvar oahu-last-view nil)
@@ -247,8 +256,9 @@ it exporting succeeds and nil if nothing."
                      (list (cons 'category 'oahu-view-name)
                            (cons 'annotation-function #'annotator)))
              (complete-with-action action view-alist string pred))))
-      (assoc (completing-read "View: " #'completions nil t)
-             view-alist))))
+      (let ((name (completing-read "View: " #'completions)))
+        (or (assoc name view-alist)
+            (cons name (funcall oahu-fallback-view-function name)))))))
 
 (defun oahu--make-bookmark-record (view-triple)
   `((handler . oahu-bookmark-handler)
